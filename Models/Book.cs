@@ -18,15 +18,17 @@ namespace LibraryZPO.Models
         public string Title { get; set; }
         public string Description { get; set; }
         [Display(Name = "Published At")]
+        [DataType(DataType.Date)]
         public DateTime PublishedAt { get; set; }
-        [Display(Name = "Price")]
-        public decimal RetailPrice { get; set; }
         public int Pages { get; set; }
         public Format Format { get; set; }
 
+        public int AuthorID { get; set; }
+        public int PublisherID { get; set; }
+        public int GenreID { get; set; }
+
         public Author Author { get; set; }
-        public ICollection<Genre> Genres { get; set; }
-        public List<BookGenre> BookGenres { get; set; }
+        public Genre Genre { get; set; }
         public Publisher Publisher { get; set; }
     }
 }

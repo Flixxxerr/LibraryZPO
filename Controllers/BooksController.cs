@@ -22,7 +22,12 @@ namespace LibraryZPO.Controllers
 
         public async Task<IActionResult> Index()
         {
-            return View(await _context.Books.ToListAsync());
+            var books = _context.Books
+                .Include(b => b.Author)
+                .Include(b => b.Publisher)
+                .Include(b => b.Genre)
+                .AsNoTracking();
+            return View(await books.ToListAsync());
         }
 
         public async Task<IActionResult> Details(int? id)
@@ -33,6 +38,10 @@ namespace LibraryZPO.Controllers
             }
 
             var book = await _context.Books
+                .Include(b => b.Publisher)
+                .Include(b => b.Author)
+                .Include(b => b.Genre)
+                .AsNoTracking()
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (book == null)
             {
@@ -44,12 +53,15 @@ namespace LibraryZPO.Controllers
 
         public IActionResult Create()
         {
+            PopulatePublishersDropDownList();
+            PopulateAuthorsDropDownList();
+            PopulateGenresDropDownList();
             return View();
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Title,Description,PublishedAt,RetailPrice,Pages,Format")] Book book)
+        public async Task<IActionResult> Create([Bind("Id,Title,Description,PublishedAt,Pages,Format,AuthorID,PublisherID,GenreID")] Book book)
         {
             try
             {
@@ -64,6 +76,9 @@ namespace LibraryZPO.Controllers
             {
                 ModelState.AddModelError("", "Unable to save changes. Try again, and if the problem persists see your system administrator.");
             }
+            PopulateAuthorsDropDownList(book.AuthorID);
+            PopulatePublishersDropDownList(book.PublisherID);
+            PopulateGenresDropDownList(book.GenreID);
             return View(book);
         }
 
@@ -79,6 +94,9 @@ namespace LibraryZPO.Controllers
             {
                 return NotFound();
             }
+            PopulateAuthorsDropDownList(book.AuthorID);
+            PopulatePublishersDropDownList(book.PublisherID);
+            PopulateGenresDropDownList(book.GenreID);
             return View(book);
         }
 
@@ -89,7 +107,7 @@ namespace LibraryZPO.Controllers
             if (id == null)
                 return NotFound();
             var bookToUpdate = await _context.Books.FirstOrDefaultAsync(s => s.Id == id);
-            if (await TryUpdateModelAsync(bookToUpdate, "", s => s.Title, s => s.Description, s => s.PublishedAt, s => s.RetailPrice, s => s.Pages, s => s.Format))
+            if (await TryUpdateModelAsync(bookToUpdate, "", s => s.Title, s => s.Description, s => s.PublishedAt, s => s.Pages, s => s.Format, s => s.AuthorID, s => s.PublisherID))
             {
                 try
                 {
@@ -101,6 +119,9 @@ namespace LibraryZPO.Controllers
                     ModelState.AddModelError("", "Unable to save changes. " + "Try again, and if the problem persists, " + "see your system administrator.");
                 }
             }
+            PopulateAuthorsDropDownList(bookToUpdate.AuthorID);
+            PopulatePublishersDropDownList(bookToUpdate.PublisherID);
+            PopulateGenresDropDownList(bookToUpdate.GenreID);
             return View(bookToUpdate);
         }
 
@@ -112,6 +133,9 @@ namespace LibraryZPO.Controllers
             }
 
             var book = await _context.Books
+                .Include(b => b.Publisher)
+                .Include(b => b.Author)
+                .Include(b => b.Genre)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (book == null)
@@ -149,6 +173,30 @@ namespace LibraryZPO.Controllers
         private bool BookExists(int id)
         {
             return _context.Books.Any(e => e.Id == id);
+        }
+
+        private void PopulateAuthorsDropDownList(object selectedAuthor = null)
+        {
+            var authorQuery = from a in _context.Authors
+                              orderby a.LastName
+                              select a;
+            ViewBag.AuthorID = new SelectList(authorQuery.AsNoTracking(), "Id", "FullName", selectedAuthor);
+        }
+
+        private void PopulatePublishersDropDownList(object selectedPublisher = null)
+        {
+            var publisherQuery = from p in _context.Publishers
+                              orderby p.Name
+                              select p;
+            ViewBag.PublisherID = new SelectList(publisherQuery.AsNoTracking(), "Id", "Name", selectedPublisher);
+        }
+
+        private void PopulateGenresDropDownList(object selectedGenre = null)
+        {
+            var genreQuery = from g in _context.Genres
+                                 orderby g.Name
+                                 select g;
+            ViewBag.GenreID = new SelectList(genreQuery.AsNoTracking(), "Id", "Name", selectedGenre);
         }
     }
 }

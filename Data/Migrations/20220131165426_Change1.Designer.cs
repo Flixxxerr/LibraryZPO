@@ -4,14 +4,16 @@ using LibraryZPO.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace LibraryZPO.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20220131165426_Change1")]
+    partial class Change1
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -53,9 +55,6 @@ namespace LibraryZPO.Data.Migrations
                     b.Property<int>("Format")
                         .HasColumnType("int");
 
-                    b.Property<int>("GenreID")
-                        .HasColumnType("int");
-
                     b.Property<int>("Pages")
                         .HasColumnType("int");
 
@@ -65,6 +64,9 @@ namespace LibraryZPO.Data.Migrations
                     b.Property<int>("PublisherID")
                         .HasColumnType("int");
 
+                    b.Property<decimal>("RetailPrice")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<string>("Title")
                         .HasColumnType("nvarchar(max)");
 
@@ -72,11 +74,24 @@ namespace LibraryZPO.Data.Migrations
 
                     b.HasIndex("AuthorID");
 
-                    b.HasIndex("GenreID");
-
                     b.HasIndex("PublisherID");
 
                     b.ToTable("Book");
+                });
+
+            modelBuilder.Entity("LibraryZPO.Models.BookGenre", b =>
+                {
+                    b.Property<int>("BookId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("GenreId")
+                        .HasColumnType("int");
+
+                    b.HasKey("BookId", "GenreId");
+
+                    b.HasIndex("GenreId");
+
+                    b.ToTable("BookGenre");
                 });
 
             modelBuilder.Entity("LibraryZPO.Models.Genre", b =>
@@ -317,12 +332,6 @@ namespace LibraryZPO.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("LibraryZPO.Models.Genre", "Genre")
-                        .WithMany("Books")
-                        .HasForeignKey("GenreID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("LibraryZPO.Models.Publisher", "Publisher")
                         .WithMany("Books")
                         .HasForeignKey("PublisherID")
@@ -331,9 +340,26 @@ namespace LibraryZPO.Data.Migrations
 
                     b.Navigation("Author");
 
-                    b.Navigation("Genre");
-
                     b.Navigation("Publisher");
+                });
+
+            modelBuilder.Entity("LibraryZPO.Models.BookGenre", b =>
+                {
+                    b.HasOne("LibraryZPO.Models.Book", "Book")
+                        .WithMany("BookGenres")
+                        .HasForeignKey("BookId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LibraryZPO.Models.Genre", "Genre")
+                        .WithMany("BookGenres")
+                        .HasForeignKey("GenreId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Book");
+
+                    b.Navigation("Genre");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -392,9 +418,14 @@ namespace LibraryZPO.Data.Migrations
                     b.Navigation("Books");
                 });
 
+            modelBuilder.Entity("LibraryZPO.Models.Book", b =>
+                {
+                    b.Navigation("BookGenres");
+                });
+
             modelBuilder.Entity("LibraryZPO.Models.Genre", b =>
                 {
-                    b.Navigation("Books");
+                    b.Navigation("BookGenres");
                 });
 
             modelBuilder.Entity("LibraryZPO.Models.Publisher", b =>
