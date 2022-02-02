@@ -20,51 +20,38 @@ namespace LibraryZPO.Controllers
             _context = context;
         }
 
-        public async Task<IActionResult> Index(string sortOrder)
+        public async Task<IActionResult> Index(string sortOrder, string searchString)
         {
             ViewData["TitleSortParm"] = String.IsNullOrEmpty(sortOrder) ? "title_desc" : "";
             ViewData["DateSortParm"] = sortOrder == "Date" ? "date_desc" : "Date";
             ViewData["AuthorSortParm"] = sortOrder == "Author" ? "author_desc" : "Author";
             ViewData["GenreSortParm"] = sortOrder == "Genre" ? "genre_desc" : "Genre";
             ViewData["PublisherSortParm"] = sortOrder == "Publisher" ? "publisher_desc" : "Publisher";
+            ViewData["CurrentFilter"] = searchString;
             var books = _context.Books
                 .Include(b => b.Author)
                 .Include(b => b.Publisher)
                 .Include(b => b.Genre)
                 .AsNoTracking();
-            switch (sortOrder)
+
+            if (!String.IsNullOrEmpty(searchString))
             {
-                case "title_desc":
-                    books = books.OrderByDescending(b => b.Title);
-                    break;
-                case "Date":
-                    books = books.OrderBy(b => b.PublishedAt);
-                    break;
-                case "date_desc":
-                    books = books.OrderByDescending(b => b.PublishedAt);
-                    break;
-                case "Author":
-                    books = books.OrderBy(b => b.Author.LastName);
-                    break;
-                case "author_desc":
-                    books = books.OrderByDescending(b => b.Author.LastName);
-                    break;
-                case "Genre":
-                    books = books.OrderBy(b => b.Genre.Name);
-                    break;
-                case "genre_desc":
-                    books = books.OrderByDescending(b => b.Genre.Name);
-                    break;
-                case "Publisher":
-                    books = books.OrderBy(b => b.Publisher.Name);
-                    break;
-                case "publisher_desc":
-                    books = books.OrderByDescending(b => b.Publisher.Name);
-                    break;
-                default:
-                    books = books.OrderBy(b => b.Title);
-                    break;
+                books = books.Where(b => b.Title.Contains(searchString));
             }
+
+            books = sortOrder switch
+            {
+                "title_desc" => books.OrderByDescending(b => b.Title),
+                "Date" => books.OrderBy(b => b.PublishedAt),
+                "date_desc" => books.OrderByDescending(b => b.PublishedAt),
+                "Author" => books.OrderBy(b => b.Author.LastName),
+                "author_desc" => books.OrderByDescending(b => b.Author.LastName),
+                "Genre" => books.OrderBy(b => b.Genre.Name),
+                "genre_desc" => books.OrderByDescending(b => b.Genre.Name),
+                "Publisher" => books.OrderBy(b => b.Publisher.Name),
+                "publisher_desc" => books.OrderByDescending(b => b.Publisher.Name),
+                _ => books.OrderBy(b => b.Title),
+            };
             return View(await books.ToListAsync());
         }
 
