@@ -8,9 +8,11 @@ using Microsoft.EntityFrameworkCore;
 using LibraryZPO.Data;
 using LibraryZPO.Models;
 using System.Data;
+using Microsoft.AspNetCore.Authorization;
 
 namespace LibraryZPO.Controllers
 {
+    [Authorize(Roles = "Administrator")]
     public class BooksController : Controller
     {
         private readonly ApplicationDbContext _context;
