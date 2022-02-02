@@ -20,13 +20,51 @@ namespace LibraryZPO.Controllers
             _context = context;
         }
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string sortOrder)
         {
+            ViewData["TitleSortParm"] = String.IsNullOrEmpty(sortOrder) ? "title_desc" : "";
+            ViewData["DateSortParm"] = sortOrder == "Date" ? "date_desc" : "Date";
+            ViewData["AuthorSortParm"] = sortOrder == "Author" ? "author_desc" : "Author";
+            ViewData["GenreSortParm"] = sortOrder == "Genre" ? "genre_desc" : "Genre";
+            ViewData["PublisherSortParm"] = sortOrder == "Publisher" ? "publisher_desc" : "Publisher";
             var books = _context.Books
                 .Include(b => b.Author)
                 .Include(b => b.Publisher)
                 .Include(b => b.Genre)
                 .AsNoTracking();
+            switch (sortOrder)
+            {
+                case "title_desc":
+                    books = books.OrderByDescending(b => b.Title);
+                    break;
+                case "Date":
+                    books = books.OrderBy(b => b.PublishedAt);
+                    break;
+                case "date_desc":
+                    books = books.OrderByDescending(b => b.PublishedAt);
+                    break;
+                case "Author":
+                    books = books.OrderBy(b => b.Author.LastName);
+                    break;
+                case "author_desc":
+                    books = books.OrderByDescending(b => b.Author.LastName);
+                    break;
+                case "Genre":
+                    books = books.OrderBy(b => b.Genre.Name);
+                    break;
+                case "genre_desc":
+                    books = books.OrderByDescending(b => b.Genre.Name);
+                    break;
+                case "Publisher":
+                    books = books.OrderBy(b => b.Publisher.Name);
+                    break;
+                case "publisher_desc":
+                    books = books.OrderByDescending(b => b.Publisher.Name);
+                    break;
+                default:
+                    books = books.OrderBy(b => b.Title);
+                    break;
+            }
             return View(await books.ToListAsync());
         }
 
