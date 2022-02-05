@@ -11,7 +11,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace LibraryZPO.Controllers
 {
-    [Authorize(Roles = "Administrator")]
+    [Authorize(Roles = "Admin")]
     public class AuthorsController : Controller
     {
         private readonly ApplicationDbContext _context;

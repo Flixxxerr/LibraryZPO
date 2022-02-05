@@ -34,15 +34,14 @@ namespace LibraryZPO
             services.AddDatabaseDeveloperPageExceptionFilter();
 
             services.AddDefaultIdentity<IdentityUser>(options => options.User.RequireUniqueEmail = true)
+                .AddRoles<IdentityRole>()
                 .AddEntityFrameworkStores<ApplicationDbContext>()
                 .AddDefaultTokenProviders();
-
-
 
             services.AddControllersWithViews();
         }
 
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IServiceProvider serviceProvider)
         {
             if (env.IsDevelopment())
             {
@@ -69,6 +68,50 @@ namespace LibraryZPO
                     pattern: "{controller=Home}/{action=Index}/{id?}");
                 endpoints.MapRazorPages();
             });
+
+            CreateRoles(serviceProvider).GetAwaiter().GetResult();
+        }
+
+        private async Task CreateRoles(IServiceProvider serviceProvider)
+        {
+            var RoleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+            var UserManager = serviceProvider.GetRequiredService<UserManager<IdentityUser>>();
+            string[] roleNames = { "Admin", "User"};
+
+            foreach (var roleName in roleNames)
+            {
+                var roleExist = await RoleManager.RoleExistsAsync(roleName);
+                if (!roleExist)
+                    await RoleManager.CreateAsync(new IdentityRole(roleName));
+            }
+
+            IdentityUser user = await UserManager.FindByEmailAsync("olafsmigielski@wp.pl");
+
+            if (user == null)
+            {
+                user = new IdentityUser()
+                {
+                    UserName = "olafsmigielski@wp.pl",
+                    Email = "olafsmigielski@wp.pl",
+                };
+                await UserManager.CreateAsync(user, "Haselko!123");
+            }
+            await UserManager.AddToRoleAsync(user, "Admin");
+
+
+            IdentityUser user1 = await UserManager.FindByEmailAsync("mrdedpl@wp.pl");
+
+            if (user1 == null)
+            {
+                user1 = new IdentityUser()
+                {
+                    UserName = "mrdedpl@wp.pl",
+                    Email = "mrdedpl@wp.pl",
+                };
+                await UserManager.CreateAsync(user1, "Haselko!123");
+            }
+            await UserManager.AddToRoleAsync(user1, "User");
+
         }
     }
 }

@@ -1,0 +1,13 @@
+﻿@model LibraryZPO.Models.Book
+
+@{
+    ViewData["Title"] = "Rent";
+}
+
+<h1>The book - '@Html.DisplayFor(model => model.Title)' has been rented.</h1>
+
+<p> You can now pick it up in our library offline.</p>
+
+<div>
+    <a asp-action="IndexUser">Back to List</a>
+</div>

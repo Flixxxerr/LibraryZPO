@@ -12,7 +12,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace LibraryZPO.Controllers
 {
-    [Authorize(Roles = "Administrator")]
+    [Authorize]
     public class BooksController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -22,6 +22,73 @@ namespace LibraryZPO.Controllers
             _context = context;
         }
 
+        [AllowAnonymous]
+        public async Task<IActionResult> IndexUser(string sortOrder, string searchString)
+        {
+            ViewData["TitleSortParm"] = String.IsNullOrEmpty(sortOrder) ? "title_desc" : "";
+            ViewData["DateSortParm"] = sortOrder == "Date" ? "date_desc" : "Date";
+            ViewData["AuthorSortParm"] = sortOrder == "Author" ? "author_desc" : "Author";
+            ViewData["GenreSortParm"] = sortOrder == "Genre" ? "genre_desc" : "Genre";
+            ViewData["PublisherSortParm"] = sortOrder == "Publisher" ? "publisher_desc" : "Publisher";
+            ViewData["CurrentFilter"] = searchString;
+            var books = _context.Books
+                .Include(b => b.Author)
+                .Include(b => b.Publisher)
+                .Include(b => b.Genre)
+                .AsNoTracking();
+
+            if (!String.IsNullOrEmpty(searchString))
+            {
+                books = books.Where(b => b.Title.Contains(searchString));
+            }
+
+            books = sortOrder switch
+            {
+                "title_desc" => books.OrderByDescending(b => b.Title),
+                "Date" => books.OrderBy(b => b.PublishedAt),
+                "date_desc" => books.OrderByDescending(b => b.PublishedAt),
+                "Author" => books.OrderBy(b => b.Author.LastName),
+                "author_desc" => books.OrderByDescending(b => b.Author.LastName),
+                "Genre" => books.OrderBy(b => b.Genre.Name),
+                "genre_desc" => books.OrderByDescending(b => b.Genre.Name),
+                "Publisher" => books.OrderBy(b => b.Publisher.Name),
+                "publisher_desc" => books.OrderByDescending(b => b.Publisher.Name),
+                _ => books.OrderBy(b => b.Title),
+            };
+            return View(await books.ToListAsync());
+        }
+
+        [Authorize(Roles = "User")]
+        public async Task<IActionResult> Rent(int id)
+        {
+            var book = await _context.Books
+                .FirstOrDefaultAsync(m => m.Id == id);
+            return View(book);
+        }
+
+        [AllowAnonymous]
+        public async Task<IActionResult> Details(int? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var book = await _context.Books
+                .Include(b => b.Publisher)
+                .Include(b => b.Author)
+                .Include(b => b.Genre)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(m => m.Id == id);
+            if (book == null)
+            {
+                return NotFound();
+            }
+
+            return View(book);
+        }
+
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Index(string sortOrder, string searchString)
         {
             ViewData["TitleSortParm"] = String.IsNullOrEmpty(sortOrder) ? "title_desc" : "";
@@ -57,37 +124,18 @@ namespace LibraryZPO.Controllers
             return View(await books.ToListAsync());
         }
 
-        public async Task<IActionResult> Details(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var book = await _context.Books
-                .Include(b => b.Publisher)
-                .Include(b => b.Author)
-                .Include(b => b.Genre)
-                .AsNoTracking()
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (book == null)
-            {
-                return NotFound();
-            }
-
-            return View(book);
-        }
-
+        [Authorize(Roles = "Admin")]
         public IActionResult Create()
         {
-            PopulatePublishersDropDownList();
             PopulateAuthorsDropDownList();
+            PopulatePublishersDropDownList();
             PopulateGenresDropDownList();
             return View();
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Create([Bind("Id,Title,Description,PublishedAt,Pages,Format,AuthorID,PublisherID,GenreID")] Book book)
         {
             try
@@ -109,6 +157,7 @@ namespace LibraryZPO.Controllers
             return View(book);
         }
 
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -129,6 +178,7 @@ namespace LibraryZPO.Controllers
 
         [HttpPost, ActionName("Edit")]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> EditPost(int? id)
         {
             if (id == null)
@@ -152,6 +202,7 @@ namespace LibraryZPO.Controllers
             return View(bookToUpdate);
         }
 
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int? id, bool? saveChangesError = false)
         {
             if (id == null)
@@ -180,6 +231,7 @@ namespace LibraryZPO.Controllers
 
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var book = await _context.Books.FindAsync(id);
